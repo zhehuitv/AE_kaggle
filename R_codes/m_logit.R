@@ -32,15 +32,6 @@ test <- dfidx(subset(data, Task<=19), shape="wide",
 PredictTest <- predict(M, newdata=test)
 PredictedChoice <- apply(PredictTest,1,which.max)
 
-# Create matrix to store predicted data
-mat <- sapply(1:4, function(x) as.integer(PredictedChoice == x))
-
-# Convert matrix to dataframe
-submission <- as.data.frame(mat)
-
-# Set column names
-colnames(submission) <- paste0("Ch", 1:4)
-
 # writing the data to the sample submission file
 existing <- read.csv("first_predictions.csv")
 existing[, c("Ch1", "Ch2", "Ch3", "Ch4")] <- PredictTest
