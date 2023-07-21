@@ -43,16 +43,5 @@ colnames(submission) <- paste0("Ch", 1:4)
 
 # writing the data to the sample submission file
 existing <- read.csv("first_predictions.csv")
-existing[, c("Ch1", "Ch2", "Ch3", "Ch4")] <- submission
+existing[, c("Ch1", "Ch2", "Ch3", "Ch4")] <- PredictTest
 write.csv(existing, "first_predictions.csv", row.names = FALSE)
-
-
-
-
-
-
-
-
-
-
-
