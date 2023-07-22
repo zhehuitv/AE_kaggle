@@ -1,1 +1,1 @@
-nest_logit files go here
+keras sequential model files go here
