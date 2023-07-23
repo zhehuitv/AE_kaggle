@@ -1,0 +1,112 @@
+---
+title: "Gradient Boosting"
+output: html_notebook
+---
+
+To install and run packages
+
+```{r}
+library(gbm)
+library(caret)
+library(caTools)
+library(ggplot2)
+
+```
+
+
+Reading csv files
+
+```{r}
+kaggle <- read.csv("train1.csv")
+kaggle1 <- subset(kaggle, select = -c(ppark, gender, night, miles, year, segment, age, educ, region, Urb, income))
+
+choice_cols <- c("Ch1", "Ch2", "Ch3", "Ch4")
+
+kaggle1$choice <- apply(kaggle1[choice_cols], 1, function(row) {
+  return(which(row == 1)[1])
+})
+
+kaggle2 <- subset(kaggle1, select = -c(CC4, GN4, NS4, BU4, FA4, LD4, BZ4, FC4, FP4, RP4, PP4, KA4, SC4, TS4, NV4, MA4, LB4, AF4, HU4, Price4))
+
+kaggle2 <- subset(kaggle2, select = -c(Ch1,Ch2,Ch3,Ch4))
+
+```
+
+
+
+Train and test data set
+
+```{r}
+set.seed(100)
+
+split <- sample.split(kaggle2$choice, SplitRatio = 0.75)
+
+train <- subset(kaggle2, split == TRUE)
+test <- subset(kaggle2, split == FALSE)
+
+
+```
+
+
+Create a gbm model
+
+```{r}
+
+model_gbm1 <- gbm(train$choice ~ .,
+                  data = train,
+                  distribution = "gaussian",
+                  cv.folds = 15,
+                  shrinkage = 0.01,
+                  n.minobsinnode = 5,
+                  n.trees = 500)
+
+#print(model_gbm1)
+#summary(model_gbm1)
+
+```
+
+# Post-model #
+
+Make Predictions
+
+```{r}
+
+preds <- predict(model_gbm1, newdata = test, n.trees = 500, type = "response")
+preds_matrix <- matrix(preds, ncol = 4, byrow = TRUE)
+colnames(preds_matrix) <- c("choice1", "choice2", "choice3", "choice4")
+probs <- apply(preds_matrix, 1, function(x) x / sum(x))
+
+
+```
+
+Now to use the model to predict the test1.csv
+
+```{r}
+# Read the csv file
+test1 <- read.csv("test1.csv")
+
+preds <- predict(model_gbm1, newdata = test1, n.trees = 500, type = "response")
+preds_matrix <- matrix(preds, ncol = 4, byrow = TRUE)
+colnames(preds_matrix) <- c("choice1", "choice2", "choice3", "choice4")
+probs <- apply(preds_matrix, 1, function(x) x / sum(x))
+
+# Convert matrix to data frame
+probs_df <- as.data.frame(t(probs1))
+colnames(probs_df) <- c("choice1", "choice2", "choice3", "choice4")
+
+# Write the data frame to a CSV file
+write.csv(probs_df, "probs.csv", row.names = FALSE)
+
+
+
+
+```
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,149 @@
+---
+title: "Decision_trees"
+output: html_notebook
+---
+
+To install and run packages
+
+```{r}
+library(gbm)
+library(caret)
+library(caTools)
+library(ggplot2)
+library(rpart)
+```
+
+
+Reading csv files
+
+```{r}
+kaggle <- read.csv("train1.csv")
+kaggle1 <- subset(kaggle, select = -c(ppark, gender, night, miles, year, segment, age, educ, region, Urb, income))
+
+choice_cols <- c("Ch1", "Ch2", "Ch3", "Ch4")
+
+kaggle1$choice <- apply(kaggle1[choice_cols], 1, function(row) {
+  return(which(row == 1)[1])
+})
+
+kaggle2 <- subset(kaggle1, select = -c(CC4, GN4, NS4, BU4, FA4, LD4, BZ4, FC4, FP4, RP4, PP4, KA4, SC4, TS4, NV4, MA4, LB4, AF4, HU4, Price4))
+
+kaggle2 <- subset(kaggle2, select = -c(Ch1,Ch2,Ch3,Ch4))
+
+```
+
+
+Train and test data set
+
+```{r}
+set.seed(100)
+
+split <- sample.split(kaggle2$choice, SplitRatio = 0.75)
+
+train <- subset(kaggle2, split == TRUE)
+test <- subset(kaggle2, split == FALSE)
+
+
+```
+
+
+Data Preprocessing
+
+```{r}
+# Separate the input features (independent variables) from the dependent variable (choice)
+X_train <- train[, !(colnames(train) %in% c("Ch1", "Ch2", "Ch3", "Ch4", "choice"))]
+y_train <- train$choice
+
+
+```
+
+
+Building Decision Tree
+
+
+```{r}
+decision_tree_model <- rpart(choice ~ ., data = train, method = "class", control = rpart.control(maxdepth = 3, cp = 0.01))
+
+decision_tree_model
+```
+
+
+Predict Individual Probabilities:
+
+```{r}
+
+individual_probabilities <- predict(decision_tree_model, newdata = test, type = "prob")
+
+
+```
+
+
+
+Obtain Predicted Probabilities:
+
+```{r}
+predicted_probs_class1 <- individual_probabilities[, 1]
+predicted_probs_class2 <- individual_probabilities[, 2]
+predicted_probs_class3 <- individual_probabilities[, 3]
+predicted_probs_class4 <- individual_probabilities[, 4]
+
+```
+
+
+
+Calculate Log Loss:
+
+```{r}
+# Assuming you have the true "choice" values for the test set in 'true_labels'
+
+# For class 1 (Ch1)
+log_loss_class1 <- -mean(log(predicted_probs_class1[test$choice == 1]))
+
+# For class 2 (Ch2)
+log_loss_class2 <- -mean(log(predicted_probs_class2[test$choice == 2]))
+
+# For class 3 (Ch3)
+log_loss_class3 <- -mean(log(predicted_probs_class3[test$choice == 3]))
+
+# For class 4 (Ch4)
+log_loss_class4 <- -mean(log(predicted_probs_class4[test$choice == 4]))
+
+# Calculate the overall log loss (average log loss across all classes)
+overall_log_loss <- (log_loss_class1 + log_loss_class2 + log_loss_class3 + log_loss_class4) / 4
+
+overall_log_loss
+
+```
+
+
+To predict:
+
+
+```{r}
+# Load the 'test1.csv' file into a dataframe called 'test_data'
+test_data <- read.csv("test1.csv")
+
+# Assuming you have trained your decision tree model as 'decision_tree_model'
+# and obtained the individual probabilities in 'individual_probabilities'
+
+individual_probabilities1 <- predict(decision_tree_model, newdata = test_data, type = "prob")
+
+# Update the 'Ch1', 'Ch2', 'Ch3', and 'Ch4' columns in 'test_data' with the probabilities
+test_data$Ch1 <- individual_probabilities1[, 1]
+test_data$Ch2 <- individual_probabilities1[, 2]
+test_data$Ch3 <- individual_probabilities1[, 3]
+test_data$Ch4 <- individual_probabilities1[, 4]
+
+# Write the updated 'test_data' dataframe with the probabilities back to 'test1.csv'
+#write.csv(test_data, "test1.csv", row.names = FALSE)
+
+
+```
+
+
+
+
+
+
+
+
