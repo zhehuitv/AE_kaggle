@@ -7,4 +7,5 @@ multinomial logit files go here
 2nd Model
 - I predicted on the test data and got an improved score.
 
-
+3rd Model
+- I removed the less significant variables but the score did not improve.
