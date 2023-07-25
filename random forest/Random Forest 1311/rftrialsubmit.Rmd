@@ -1,0 +1,157 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+
+
+```{r}
+df <- read.csv("trainedit.csv")
+head(df)
+
+dftest <- read.csv("testedit.csv")
+```
+
+```{r}
+# Load the necessary library
+library(randomForest)
+library(nnet)  # for class.ind() function
+
+# Combine choice columns into a single target column
+df$target <- ifelse(df$Ch1 == 1, 'Ch1',
+                    ifelse(df$Ch2 == 1, 'Ch2',
+                           ifelse(df$Ch3 == 1, 'Ch3', 'Ch4')))
+
+# Remove choice columns
+df$Ch1 <- NULL
+df$Ch2 <- NULL
+df$Ch3 <- NULL
+df$Ch4 <- NULL
+```
+
+```{r}
+#Cleaning Test data
+# Combine choice columns into a single target column
+dftest$target <- ifelse(dftest$Ch1 == 1, 'Ch1',
+                    ifelse(dftest$Ch2 == 1, 'Ch2',
+                           ifelse(dftest$Ch3 == 1, 'Ch3', 'Ch4')))
+
+# Remove choice columns
+dftest$Ch1 <- NULL
+dftest$Ch2 <- NULL
+dftest$Ch3 <- NULL
+dftest$Ch4 <- NULL
+```
+
+
+```{r}
+# Set the seed for reproducibility
+set.seed(123)
+
+
+
+# Create the training dataset
+trainingData <- df
+
+#IF WANT TO USE ACTUAL TEST, make sure to reformat the data first as well
+testData <- dftest
+
+# Convert the target column to factor
+trainingData$target <- as.factor(trainingData$target)
+testData$target <- as.factor(testData$target)
+
+```
+
+```{r}
+#Finding best mtry
+#library(caret)
+
+# Define the control using a cross-validation
+#control <- trainControl(method="cv", number=5, search="grid")
+
+# Grid of parameters to explore
+#grid <- expand.grid(.mtry=seq(1, ncol(trainingData) - 1, by = 2)) 
+
+# Train the model
+#model <- train(target~.-No -CC4 -GN4 -NS4 -BU4 -FA4 -LD4 -BZ4 -FC4 -FP4 -RP4 -PP4 -KA4 -SC4 -TS4 -NV4 -MA4 -LB4 -AF4 -HU4 -Price4 -genderind, data=trainingData, method="rf", metric="Accuracy", tuneGrid=grid, trControl=control, ntree=1000)
+
+# Print model details
+#print(model)
+```
+
+
+```{r}
+# Train the model
+set.seed(12)
+rf_model <- randomForest(target~. -No -CC4 -GN4 -NS4 -BU4 -FA4 -LD4 -BZ4 -FC4 -FP4 -RP4 -PP4 -KA4 -SC4 -TS4 -NV4 -MA4 -LB4 -AF4 -HU4 -Price4 -genderind, data=trainingData, ntree=1000, importance=TRUE)
+
+# Print model
+print(rf_model)
+
+# Predict using the model and get probabilities
+predicted_probs <- predict(rf_model, newdata=testData, type="prob")
+
+# Print the first few lines of predicted probabilities
+print(head(predicted_probs))
+
+```
+
+```{r}
+# Create a data frame from the predicted probabilities
+output <- as.data.frame(predicted_probs)
+output$No <- testData$No
+
+# Order the columns
+output <- output[c("No", "Ch1", "Ch2", "Ch3", "Ch4")]
+
+# Write to CSV to export submission file
+#write.csv(output, file = "rf1_testsubmission.csv", row.names=TRUE)
+head(output)
+```
+
+```{r}
+#Not applicable to non-transformed data
+#library(dplyr)
+#result <- output %>%
+#  group_by(No) %>%
+#  summarise(across(starts_with("Ch"), mean, na.rm = TRUE))
+
+# Print the result
+#print(result)
+
+# Export predicted values
+#write.csv(result, file = "results.csv", row.names=TRUE)
+```
+
+#Checking Accuracy, no need to run since this is actual one
+
+```{r}
+# Predict using the model
+predictions <- predict(rf_model, newdata=testData)
+
+# Check accuracy
+accuracy <- sum(predictions == testData$target) / nrow(testData)
+print(paste('Accuracy:', round(accuracy*100, 2), '%'))
+
+library(caret)
+
+# Generate a confusion matrix
+cm <- confusionMatrix(data = predictions, reference = testData$target)
+
+# Print the confusion matrix
+print(cm)
+
+#Checking value of mtry
+rf_model$mtry
+
+
+# Then, to check the importance of variables
+#importance(rf_model)
+```
+
+
+

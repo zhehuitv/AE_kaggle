@@ -1,0 +1,65 @@
+---
+title: "Afiq Logloss 250723"
+output: html_notebook
+---
+
+```{r}
+library(Metrics)
+
+```
+
+
+```{r}
+data <- read.csv("rf1_4849.csv")
+
+map_choice <- function(choice_str) {
+  if (choice_str == "Ch1") {
+    return(1)
+  } else if (choice_str == "Ch2") {
+    return(2)
+  } else if (choice_str == "Ch3") {
+    return(3)
+  } else if (choice_str == "Ch4") {
+    return(4)
+  }
+}
+
+data$choice <- sapply(data[, 7], map_choice)
+
+```
+
+
+Obtain Predicted Probabilities:
+
+```{r}
+predicted_probs_class1 <- data[, 2]
+predicted_probs_class2 <- data[, 3]
+predicted_probs_class3 <- data[, 4]
+predicted_probs_class4 <- data[, 5]
+
+```
+
+Calculate Log Loss:
+
+```{r}
+# Assuming you have the true "choice" values for the test set in 'true_labels'
+
+# For class 1 (Ch1)
+log_loss_class1 <- -mean(log(predicted_probs_class1[data$choice == 1]))
+
+# For class 2 (Ch2)
+log_loss_class2 <- -mean(log(predicted_probs_class2[data$choice == 2]))
+
+# For class 3 (Ch3)
+log_loss_class3 <- -mean(log(predicted_probs_class3[data$choice == 3]))
+
+# For class 4 (Ch4)
+log_loss_class4 <- -mean(log(predicted_probs_class4[data$choice == 4]))
+
+# Calculate the overall log loss (average log loss across all classes)
+overall_log_loss <- (log_loss_class1 + log_loss_class2 + log_loss_class3 + log_loss_class4) / 4
+
+overall_log_loss
+
+```
+
